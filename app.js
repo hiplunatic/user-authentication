@@ -2,7 +2,6 @@ var express = require('express');
 var path = require('path');
 var favicon = require('serve-favicon');
 var logger = require('morgan');
-var expressValidator = ('express-validator');
 var cookieParser = require('cookie-parser');
 var session = require('express-session');
 var passport = require('passport');
@@ -12,6 +11,7 @@ var multer = require('multer');
 var flash = require('connect-flash');
 var mongo = require('mongodb');
 var mongoose = require('mongoose');
+var expressValidator = ('express-validator');
 
 var upload = multer({ dest: './uploads' });
 
@@ -33,6 +33,24 @@ app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
+//validator stuff
+app.use(expressValidator({
+  errorFormatter: function(param, msg, value) {
+      var namespace = param.split('.')
+      , root    = namespace.shift()
+      , formParam = root;
+
+    while(namespace.length) {
+      formParam += '[' + namespace.shift() + ']';
+    }
+    return {
+      param : formParam,
+      msg   : msg,
+      value : value
+    };
+  }
+}));
+
 //handle session stuff
 app.use(session({
   secret: 'secret',
@@ -43,24 +61,6 @@ app.use(session({
 //passport stuff
 app.use(passport.initialize());
 app.use(passport.session());
-
-//validator stuff
-app.use(expressValidator({
-  errorFormatter: function(param, msg, value){
-    var namespace = param.split('.'),
-        root      = namespace.shift(),
-        formParam = root;
-
-    while(namespace.length){
-      formParam += '[' + namespace.shift() + ']';
-    }
-    return {
-      param: formParam,
-      msg: msg,
-      value: value
-    };
-  }
-}));
 
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
